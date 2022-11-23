@@ -24,18 +24,23 @@ intents.messages = True
 
 bot = commands.Bot(command_prefix='!', description=description, intents=intents)
 
-
+#events 
 @bot.event
-async def on_ready():
+async def on_connect():
     print(f'{bot.user} has connected to Discord!')
+@bot.event 
+async def on_disconnect():
+    print(f'{bot.user} has disconnected from Discord!')
 
+#commands
 @bot.command(name='roll')
-async def ping(ctx, sides: int, times: int):
+async def roll(ctx, sides: int, times: int):
     #ctx refers to the context for the channel where the command was sent from
     sum = 0
     for i in range(0, times):
         sum += random.randint(1,sides)
     await ctx.send(sum)
+
 
 bot.run(TOKEN)
 
