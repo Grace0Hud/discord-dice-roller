@@ -7,6 +7,8 @@ import random
 import dotenv
 from dotenv import load_dotenv
 from discord.ext import commands
+from discord import embeds
+from character import character
 
 #getting enviormental variables
 #token stored this way for security
@@ -41,6 +43,20 @@ async def roll(ctx, sides: int, times: int):
         sum += random.randint(1,sides)
     await ctx.send(sum)
 
+@bot.command(name = "showchar")
+async def showchar(ctx):
+    #will print out the character information as an embed 
+    chara = character("Chiko")
+    embed = discord.Embed(title= f'{chara.name}', description="You have a character")
+    fields = [("Str", f'{chara.str}', True),
+              ("Dex", f'{chara.dex}', True),
+              ("Con", f'{chara.con}', True),
+              ("Int", f'{chara.intel}', True),
+              ("Wis", f'{chara.wis}', True),
+              ("Cha", f'{chara.cha}', True)]
+    for name, value, inline in fields: 
+        embed.add_field(name = name, value = value, inline=inline)
+    await ctx.send(embed=embed)
 
 bot.run(TOKEN)
 
