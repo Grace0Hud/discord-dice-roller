@@ -9,15 +9,15 @@ from dotenv import load_dotenv
 from discord.ext import commands
 from discord import embeds
 from character import character
-
+from lib.db import db
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 #getting enviormental variables
 #token stored this way for security
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-
-
 description = '''This is a test bot'''
-
+scheduler = AsyncIOScheduler()
+db.autosave(scheduler)
 #intenets are new, added in 09/01/22, it was the reason my bot could not
 #send messages for a long time
 intents = discord.Intents.default()
@@ -33,6 +33,10 @@ async def on_connect():
 @bot.event 
 async def on_disconnect():
     print(f'{bot.user} has disconnected from Discord!')
+@bot.event 
+async def on_ready():
+    scheduler.start()
+    print(f'{bot.user} is ready!')
 
 #commands
 @bot.command(name='roll')
