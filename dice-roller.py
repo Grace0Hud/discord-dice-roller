@@ -51,10 +51,10 @@ async def roll(ctx, sides: int, times: int):
 async def showchar(ctx):
     #will print out the character information as an embed 
     userID = ctx.author.id
-    if(db.record('SELECT name FROM characterLists WHERE UserID = ?', userID) is None):
-        await ctx.send("You do not have a character to show.\n To create one, type \'!newcha [character name]\'")
+    if(db.record('SELECT ChaName FROM characterLists WHERE UserID = ?', userID) is None):
+        await ctx.send("You do not have any characters to show.\n To create one, type \'!newcha [character name]\'")
     else:
-        chara = character("Chiko")
+        chara = character.process(userID)
         embed = discord.Embed(title= f'{chara.name}', description="You have a character")
         fields = [("Str", f'{chara.str}', True),
                 ("Dex", f'{chara.dex}', True),
