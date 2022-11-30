@@ -47,20 +47,39 @@ async def roll(ctx, sides: int, times: int):
         sum += random.randint(1,sides)
     await ctx.send(sum)
 
-@bot.command(name = "showchar")
+@bot.command(name = 'showchar')
 async def showchar(ctx):
     #will print out the character information as an embed 
-    chara = character("Chiko")
-    embed = discord.Embed(title= f'{chara.name}', description="You have a character")
-    fields = [("Str", f'{chara.str}', True),
-              ("Dex", f'{chara.dex}', True),
-              ("Con", f'{chara.con}', True),
-              ("Int", f'{chara.intel}', True),
-              ("Wis", f'{chara.wis}', True),
-              ("Cha", f'{chara.cha}', True)]
-    for name, value, inline in fields: 
-        embed.add_field(name = name, value = value, inline=inline)
-    await ctx.send(embed=embed)
+    userID = ctx.author.id
+    if(db.record('SELECT name FROM characterLists WHERE UserID = ?', userID) is None):
+        await ctx.send("You do not have a character to show.\n To create one, type \'!newcha [character name]\'")
+    else:
+        chara = character("Chiko")
+        embed = discord.Embed(title= f'{chara.name}', description="You have a character")
+        fields = [("Str", f'{chara.str}', True),
+                ("Dex", f'{chara.dex}', True),
+                ("Con", f'{chara.con}', True),
+                ("Int", f'{chara.intel}', True),
+                ("Wis", f'{chara.wis}', True),
+                ("Cha", f'{chara.cha}', True)]
+        for name, value, inline in fields: 
+            embed.add_field(name = name, value = value, inline=inline)
+        await ctx.send(embed=embed)
+
+@bot.command(name = 'newcha')
+async def newcha(ctx, chaName: str):
+    userID = ctx.author.id
+    #checks to see if there is already a character created for the individual
+    #if there isn't, creates the character, if there is it warns them they 
+    #already have one
+    if(chaName is None):
+        await ctx.send('Command: !newcha [characterName]')
+    elif(db.record('SELECT chaName FROM characterLists WHERE UserID = ?', userID) is None):
+        db.execute('INSERT INTO characterLists (UserID, ChaName) VALUES (?,?)', userID, chaName)
+        await ctx.send('Character created')
+    else:
+        await ctx.send('You already have a character.')
+
 
 bot.run(TOKEN)
 
