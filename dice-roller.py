@@ -48,13 +48,15 @@ async def roll(ctx, sides: int, times: int):
     await ctx.send(sum)
 
 @bot.command(name = 'showchar')
-async def showchar(ctx):
+async def showchar(ctx, charaName = " "):
     #will print out the character information as an embed 
     userID = ctx.author.id
     if(db.record('SELECT ChaName FROM characterLists WHERE UserID = ?', userID) is None):
         await ctx.send("You do not have any characters to show.\n To create one, type \'!newcha [character name]\'")
+    elif(db.record('SELECT ChaName FROM characterLists WHERE UserID = ? AND ChaName =?', userID, charaName) is None):
+        await ctx.send("You don't have a character by that name")
     else:
-        chara = character.process(userID)
+        chara = character.process(userID, charaName)
         embed = discord.Embed(title= f'{chara.name}', description="You have a character")
         fields = [("Str", f'{chara.str}', True),
                 ("Dex", f'{chara.dex}', True),
@@ -74,11 +76,11 @@ async def newcha(ctx, chaName: str):
     #already have one
     if(chaName is None):
         await ctx.send('Command: !newcha [characterName]')
-    elif(db.record('SELECT chaName FROM characterLists WHERE UserID = ?', userID) is None):
+    elif(db.record('SELECT chaName FROM characterLists WHERE UserID = ? AND chaName = ?', userID, chaName) is not None):
+        await ctx.send('You already have a character by that name.')
+    else:
         db.execute('INSERT INTO characterLists (UserID, ChaName) VALUES (?,?)', userID, chaName)
         await ctx.send('Character created')
-    else:
-        await ctx.send('You already have a character.')
 
 
 bot.run(TOKEN)
