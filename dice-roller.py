@@ -41,12 +41,24 @@ async def on_ready():
     print(f'{bot.user} is ready!')
 
 #commands
-@bot.command(brief = 'paremeters: [sides: a whole number] [#rolls: a whole number]', description = 'Gets a random number between 1 and \'sides\' \'rolls\' times then adds them up and returns them', name='roll')
-async def roll(ctx, sides: int, times: int):
+@bot.command(brief = 'paremeters: [sides: a whole number] [#rolls: a whole number] optional params: [name] [stat] [proficiency (choose): 0, 1, 2]', description = 'Gets a random number between 1 and \'sides\' \'rolls\' times then adds them up and returns them. If the stat and proficiency parameters are present, it will add the modifier from the specified stat and your profiency based on your level (2 being expertise aka double proficiency)', name='roll')
+async def roll(ctx, sides: int, times: int, charaName = ' ', stat = ' ', prof = 0):
     #ctx refers to the context for the channel where the command was sent from
+    userID = ctx.author.id
     sum = 0
     for i in range(0, times):
         sum += random.randint(1,sides)
+    if(charaName != ' '):
+        if(stat != ' '):
+            if(db.characterInDB(userID, charaName)):
+                chara = character.process(userID, charaName)
+                if(chara.getModifier(stat) is not None):
+                    sum+= chara.getModifier(stat)
+                    for i in range(0, prof):
+                        sum+= chara.calcProf()
+            else:
+                await ctx.send ('Character does not exist. Returning roll without modifiers.')
+
     await ctx.send(sum)
 
 @bot.command(brief = 'paremeters: NONE or [character name]', description = 'Will return all of the characters associated with the caller\'s UserID or a specific character when [character name] is specified', name = 'showchar')
@@ -120,20 +132,20 @@ async def newchar(ctx, chaName: str, level = 1, st = 0, dex = 0, con = 0, intel 
     #already have one
     if(chaName is None):
         await ctx.send('Command: !newchar [characterName]')
-    elif(db.record('SELECT chaName FROM characterLists WHERE UserID = ? AND chaName = ?', userID, chaName) is not None):
+    elif(db.characterInDB(userID,chaName) is True):
         await ctx.send('You already have a character by that name.')
     else:
         chara = character(userID, chaName, level, st, dex, con, intel, wis, cha)
         chara.addToDB()
         await ctx.send('Character created')
 
-@bot.command(name = 'updateStat', brief = 'parameters: [character name] [stat: level, str, dex, con, int, wis, or cha] [new value]', description = 'changes the the specified stat to the new value for the specified character')
-async def updateStat(ctx, charaName:str, stat:str, newValue:int):
+@bot.command(name = 'updatestat', brief = 'parameters: [character name] [stat (choose from): level, str, dex, con, int, wis, or cha] [new value]', description = 'changes the the specified stat to the new value for the specified character')
+async def updatestat(ctx, charaName:str, stat:str, newValue:int):
 
     userID = ctx.author.id
     #will update the stat if the command is inputted correctly
     #and the user has a character by that name
-    if(db.record('SELECT ChaName FROM characterLists WHERE UserID = ? AND ChaName =?', userID, charaName) is None):
+    if(db.characterInDB(userID,charaName) is False):
         await ctx.send("You don't have a character by that name")
     else:
         chara = character.process(userID, charaName)
@@ -141,7 +153,6 @@ async def updateStat(ctx, charaName:str, stat:str, newValue:int):
             await ctx.send('Invalid stat.')
         else:
             await ctx.send('Stat updated.')
-    
 
 bot.run(TOKEN)
 

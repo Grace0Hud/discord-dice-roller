@@ -28,7 +28,19 @@ class character:
         for i in range(0, len(nameList)):
             charaList[i] = character.process(userID, nameList[i][0])
         return charaList
-    
+
+    #calculates the proficiency modifier
+    def calcProf(self):
+        if(self.level >= 1):
+            if(self.level >= 5):
+                if(self.level >= 9):
+                    if(self.level >= 13):
+                        if(self.level >= 17):
+                            return 6
+                        return 5
+                    return 4
+                return 3
+            return 2
     def addToDB(self):
         # info = [userID, self.name, self.str, self.dex, self.con, self.intel, self.wis, self.cha]
         # valueset = [(i,) for i in info]
@@ -102,7 +114,7 @@ class character:
 
     #calls compute mod on specified stat
     def getModifier(self, stat: str):
-        if stat == "st":
+        if stat == "str":
             return character.computeMod(self.str)
         elif stat == "dex":
             return character.computeMod(self.dex)
@@ -114,6 +126,8 @@ class character:
             return character.computeMod(self.wis)
         elif stat == "cha":
             return character.computeMod(self.cha)
+        elif stat == ' ':
+            return None
         else:
             print("Not a valid stat")
             return None

@@ -5,7 +5,7 @@ DB_PATH = "./data/db/database.db"
 BUILD_PATH = "./data/db/build.sql"
 
 #connects the database to the path of where the database file is
-cxn = connect(DB_PATH, check_same_thread=False)
+cxn = connect(DB_PATH, check_same_thread=False, timeout = 10)
 #called a database cursor
 cur = cxn.cursor()
 
@@ -21,8 +21,16 @@ def build():
     if isfile(BUILD_PATH):
         scriptexec(BUILD_PATH)
 
+#confirms a character by specified name 
+#exists in the database belonging to the user
+def characterInDB(userID: int, charaName: str):
+    if(record('SELECT ChaName FROM characterLists WHERE UserID = ? AND ChaName =?', userID, charaName) is None):
+        return False
+    return True
+
 #commits to the database before being able to save the changes
 def commit():
+    print("committing...")
     cxn.commit()
 
 #add job to the scheduler to commit database every minute
@@ -59,6 +67,7 @@ def execute(command, *values):
 def multiexec(command, valueset):
     cur.executemany(command, valueset)
 
+#runs the script written in the "build.sql" file
 def scriptexec(path):
 	with open(path, "r", encoding="utf-8") as script:
 		cur.executescript(script.read())
