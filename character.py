@@ -38,12 +38,12 @@ class character:
     #creates a formatted embed for the character
     def createEmbed(self):
         embed = discord.Embed(title= f'{self.name}', description="You have a character")
-        fields = [("Str", f'{self.str}', True),
-                ("Dex", f'{self.dex}', True),
-                ("Con", f'{self.con}', True),
-                ("Int", f'{self.intel}', True),
-                ("Wis", f'{self.wis}', True),
-                ("Cha", f'{self.cha}', True)]
+        fields = [("Str", f'{self.str}' + '(' + f'{character.computeMod(self.str)}' + ')', True),
+                ("Dex", f'{self.dex}' + '(' + f'{character.computeMod(self.dex)}' + ')', True),
+                ("Con", f'{self.con}' + '(' + f'{character.computeMod(self.con)}' + ')', True),
+                ("Int", f'{self.intel}' + '(' + f'{character.computeMod(self.intel)}' + ')', True),
+                ("Wis", f'{self.wis}'+ '(' + f'{character.computeMod(self.wis)}' + ')', True),
+                ("Cha", f'{self.cha}'+ '(' + f'{character.computeMod(self.cha)}' + ')', True)]
         for name, value, inline in fields: 
             embed.add_field(name = name, value = value, inline=inline)
         return embed
@@ -93,9 +93,9 @@ class character:
     #computes modifier for stats
     def computeMod(stat:int):
         if stat >= 10:
-            return (stat-10)/2
+            return int((stat-10)/2)
         else:
-            return (stat-11)/2
+            return int((stat-11)/2)
     #the to string function, 
     #returns the object in a formatted string
     def __str__(self):
