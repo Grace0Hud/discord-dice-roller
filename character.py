@@ -48,8 +48,32 @@ class character:
         for name, value, inline in fields: 
             embed.add_field(name = name, value = value, inline=inline)
         return embed
+    #deciding which setter to use, returns false if an invalid value was passed in
+    #otherwise updates the stat for the character and the database
+    def setStat(self, stat: str, newValue:int):
+        if stat == "level":
+            self.setLevel(newValue)
+        elif stat == "str":
+            self.setSt(newValue)
+        elif stat == "dex":
+            self.setDex(newValue)
+        elif stat == "con":
+            self.setCon(newValue)
+        elif stat == "intel":
+            self.setIntel(newValue)
+        elif stat == "wis":
+            self.setWis(newValue)
+        elif stat == "cha":
+            self.setCha(newValue)
+        else:
+            print("Not a valid stat")
+            return False
+        return True
     #all setters for the class variables, 
     #will update in the database as well. 
+    def setLevel(self, newLevel: int):
+        self.level = newLevel
+        db.execute('UPDATE characterLists SET ChaName = ? WHERE UserID = ?', newLevel, self.userID)
     def setName(self, newName: str):
         self.name = newName
         db.execute('UPDATE characterLists SET ChaName = ? WHERE UserID = ?', newName, self.userID)

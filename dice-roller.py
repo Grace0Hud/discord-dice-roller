@@ -55,7 +55,7 @@ async def showchar(ctx, charaName = ' '):
     userID = ctx.author.id
 
     if(db.record('SELECT ChaName FROM characterLists WHERE UserID = ?', userID) is None):
-        await ctx.send("You do not have any characters to show.\n To create one, type \'!newcha [character name]\'")
+        await ctx.send("You do not have any characters to show.\n To create one, type \'!newchar [character name]\'")
     elif(charaName == ' '):
         #processing all the characters related to the user ID
         charaList = character.processMultiple(userID, db.records('SELECT ChaName FROM characterLists WHERE userID = ?', userID))
@@ -113,7 +113,7 @@ async def showchar(ctx, charaName = ' '):
         await ctx.send(embed=chara.createEmbed())
 
 @bot.command(brief = 'paremeters: [character name]; optional params: [level] [str] [dex] [con] [int] [wis] [cha]', description = 'Creates a new character by the given name with default stats',name = 'newchar')
-async def newcha(ctx, chaName: str, level = 1, st = 0, dex = 0, con = 0, intel = 0, wis = 0, cha = 0):
+async def newchar(ctx, chaName: str, level = 1, st = 0, dex = 0, con = 0, intel = 0, wis = 0, cha = 0):
     userID = ctx.author.id
     #checks to see if there is already a character created for the individual
     #if there isn't, creates the character, if there is it warns them they 
@@ -127,6 +127,21 @@ async def newcha(ctx, chaName: str, level = 1, st = 0, dex = 0, con = 0, intel =
         chara.addToDB()
         await ctx.send('Character created')
 
+@bot.command(name = 'updateStat', brief = 'parameters: [character name] [stat: level, str, dex, con, int, wis, or cha] [new value]', description = 'changes the the specified stat to the new value for the specified character')
+async def updateStat(ctx, charaName:str, stat:str, newValue:int):
+
+    userID = ctx.author.id
+    #will update the stat if the command is inputted correctly
+    #and the user has a character by that name
+    if(db.record('SELECT ChaName FROM characterLists WHERE UserID = ? AND ChaName =?', userID, charaName) is None):
+        await ctx.send("You don't have a character by that name")
+    else:
+        chara = character.process(userID, charaName)
+        if(chara.setStat(stat, newValue) is False):
+            await ctx.send('Invalid stat.')
+        else:
+            await ctx.send('Stat updated.')
+    
 
 bot.run(TOKEN)
 
