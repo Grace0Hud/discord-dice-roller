@@ -112,8 +112,8 @@ async def showchar(ctx, charaName = ' '):
         chara = character.process(userID, charaName)
         await ctx.send(embed=chara.createEmbed())
 
-@bot.command(brief = 'paremeters: [character name]; optional params: [str] [dex] [con] [int] [wis] [cha]', description = 'Creates a new character by the given name with default stats',name = 'newchar')
-async def newcha(ctx, chaName: str, st = 0, dex = 0, con = 0, intel = 0, wis = 0, cha = 0):
+@bot.command(brief = 'paremeters: [character name]; optional params: [level] [str] [dex] [con] [int] [wis] [cha]', description = 'Creates a new character by the given name with default stats',name = 'newchar')
+async def newcha(ctx, chaName: str, level = 1, st = 0, dex = 0, con = 0, intel = 0, wis = 0, cha = 0):
     userID = ctx.author.id
     #checks to see if there is already a character created for the individual
     #if there isn't, creates the character, if there is it warns them they 
@@ -123,7 +123,7 @@ async def newcha(ctx, chaName: str, st = 0, dex = 0, con = 0, intel = 0, wis = 0
     elif(db.record('SELECT chaName FROM characterLists WHERE UserID = ? AND chaName = ?', userID, chaName) is not None):
         await ctx.send('You already have a character by that name.')
     else:
-        chara = character(userID, chaName, st, dex, con, intel, wis, cha)
+        chara = character(userID, chaName, level, st, dex, con, intel, wis, cha)
         chara.addToDB()
         await ctx.send('Character created')
 

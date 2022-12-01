@@ -5,9 +5,10 @@ from discord import embeds
 class character:
     #constructor
     #demands a name argument, but the others are defaulted to 0
-    def __init__(self, userID:int, name:str, str=0, dex=0, con=0, intel=0, wis=0, cha=0):
+    def __init__(self, userID:int, name:str, level = 1, str=0, dex=0, con=0, intel=0, wis=0, cha=0):
         self.userID = userID
         self.name = name
+        self.level = level
         self.str = str
         self.dex = dex
         self.con = con
@@ -17,7 +18,7 @@ class character:
     #queries the records associated with the userID and returns a character object with the same information
     def process(userID: int, charaName: str):
         characterInfo = db.record('SELECT * FROM characterLists WHERE UserID = ? AND ChaName = ?', userID, charaName)
-        chara = character(characterInfo[0],characterInfo[1],characterInfo[2], characterInfo[3],characterInfo[4],characterInfo[5],characterInfo[6],characterInfo[7])
+        chara = character(characterInfo[0],characterInfo[1],characterInfo[2], characterInfo[3],characterInfo[4],characterInfo[5],characterInfo[6],characterInfo[7], characterInfo[8])
         return chara
     
     #processes a list of strings of names
@@ -33,11 +34,11 @@ class character:
         # valueset = [(i,) for i in info]
         # print(valueset[0])
         # valueset[0],valueset[1],valueset[2],valueset[3],valueset[4],valueset[5],valueset[6],valueset[7]
-        db.execute('INSERT INTO characterLists (UserID, ChaName, st, dex, con, intel, wis, cha) VALUES (?,?,?,?,?,?,?,?)', self.userID, self.name, self.str, self.dex, self.con, self.intel, self.wis, self.cha)
+        db.execute('INSERT INTO characterLists (UserID, ChaName, level, st, dex, con, intel, wis, cha) VALUES (?,?,?,?,?,?,?,?,?)', self.userID, self.name, self.level, self.str, self.dex, self.con, self.intel, self.wis, self.cha)
     
     #creates a formatted embed for the character
     def createEmbed(self):
-        embed = discord.Embed(title= f'{self.name}', description="You have a character")
+        embed = discord.Embed(title= f'{self.name}', description='Level: ' + f'{self.level}')
         fields = [("Str", f'{self.str}' + '(' + f'{character.computeMod(self.str)}' + ')', True),
                 ("Dex", f'{self.dex}' + '(' + f'{character.computeMod(self.dex)}' + ')', True),
                 ("Con", f'{self.con}' + '(' + f'{character.computeMod(self.con)}' + ')', True),
@@ -49,27 +50,30 @@ class character:
         return embed
     #all setters for the class variables, 
     #will update in the database as well. 
-    def setName(self, userID: int, newName: str):
+    def setName(self, newName: str):
         self.name = newName
-        db.execute('UPDATE characterLists SET ChaName = ? WHERE UserID = ?', newName, userID)
-    def setSt(self, userID: int, newSt: int):
+        db.execute('UPDATE characterLists SET ChaName = ? WHERE UserID = ?', newName, self.userID)
+    def setLevel(self, newLevel:int):
+        self.level = newLevel
+        db.execute('UPDATE characterLists SET level = ? WHERE UserID = ?', newLevel, self.userID)
+    def setSt(self, newSt: int):
         self.str = newSt
-        db.execute('UPDATE characterLists SET st = ? WHERE UserID = ?', newSt, userID)
-    def setDex(self, userID: int, newDex: int):
+        db.execute('UPDATE characterLists SET st = ? WHERE UserID = ?', newSt, self.userID)
+    def setDex(self, newDex: int):
         self.dex = newDex
-        db.execute('UPDATE characterLists SET dex = ? WHERE UserID = ?', newDex, userID)    
-    def setCon(self, userID: int, newCon: int):
+        db.execute('UPDATE characterLists SET dex = ? WHERE UserID = ?', newDex, self.userID)    
+    def setCon(self, newCon: int):
         self.con = newCon
-        db.execute('UPDATE characterLists SET con = ? WHERE UserID = ?', newCon, userID)
-    def setIntel(self, userID: int, newIntel: int):
+        db.execute('UPDATE characterLists SET con = ? WHERE UserID = ?', newCon, self.userID)
+    def setIntel(self, newIntel: int):
         self.intel = newIntel
-        db.execute('UPDATE characterLists SET intel = ? WHERE UserID = ?', newIntel, userID)
-    def setWis(self, userID: int, newWis: int):
+        db.execute('UPDATE characterLists SET intel = ? WHERE UserID = ?', newIntel, self.userID)
+    def setWis(self, newWis: int):
         self.wis = newWis
-        db.execute('UPDATE characterLists SET wis = ? WHERE UserID = ?', newWis, userID)
-    def setCha(self, userID: int, newCha: int):
+        db.execute('UPDATE characterLists SET wis = ? WHERE UserID = ?', newWis, self.userID)
+    def setCha(self, newCha: int):
         self.cha = newCha
-        db.execute('UPDATE characterLists SET cha = ? WHERE UserID = ?', newCha, userID)
+        db.execute('UPDATE characterLists SET cha = ? WHERE UserID = ?', newCha, self.userID)
 
 
     #calls compute mod on specified stat
