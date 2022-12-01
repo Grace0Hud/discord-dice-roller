@@ -11,11 +11,12 @@ from discord import embeds
 from character import character
 from lib.db import db
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import asyncio
 #getting enviormental variables
 #token stored this way for security
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-description = '''This is a test bot'''
+description = '''A dice rolling and character keeping bot for Dungeons and Dragons'''
 scheduler = AsyncIOScheduler()
 db.autosave(scheduler)
 #intenets are new, added in 09/01/22, it was the reason my bot could not
@@ -38,8 +39,18 @@ async def on_ready():
     scheduler.start()
     print(f'{bot.user} is ready!')
 
+# @bot.command(name = 'help')
+# async def help(ctx):
+#     embed = discord.Embed(title= 'Commands', description="")
+#     fields = [("Str", '!roll [sides] [times]  || returns the sum of a [sides] sided die rolled [times] times', True),
+#              ("Dex", '!showchar [name] || returns the name and stats of the character of the specified name', True),
+#              ("Con", '!newchar [name] || creates a character by that name', True),]
+#     for name, value, inline in fields: 
+#         embed.add_field(name = name, value = value, inline=inline)
+#     await ctx.send(embed=embed)
+
 #commands
-@bot.command(name='roll')
+@bot.command(brief = 'paremeters: [sides: a whole number] [#rolls: a whole number]', description = 'Gets a random number between 1 and \'sides\' \'rolls\' times then adds them up and returns them', name='roll')
 async def roll(ctx, sides: int, times: int):
     #ctx refers to the context for the channel where the command was sent from
     sum = 0
@@ -47,35 +58,78 @@ async def roll(ctx, sides: int, times: int):
         sum += random.randint(1,sides)
     await ctx.send(sum)
 
-@bot.command(name = 'showchar')
-async def showchar(ctx, charaName = " "):
+@bot.command(brief = 'paremeters: NONE or [character name]', description = 'Will return all of the characters associated with the caller\'s UserID or a specific character when [character name] is specified', name = 'showchar')
+async def showchar(ctx, charaName = ' '):
     #will print out the character information as an embed 
     userID = ctx.author.id
+    
+        
     if(db.record('SELECT ChaName FROM characterLists WHERE UserID = ?', userID) is None):
         await ctx.send("You do not have any characters to show.\n To create one, type \'!newcha [character name]\'")
+    elif(charaName == ' '):
+        #processing all the characters related to the user ID
+        charaList = character.processMultiple(userID, db.records('SELECT ChaName FROM characterLists WHERE userID = ?', userID))
+        #creating an embed for each of the characters and storing it in a list
+        embedList = [charaList[i].createEmbed() for i in range(0, len(charaList))]
+        #list of the emoji reactions to be added to the message
+        buttons = [u"\u23EA", u"\u25C0", u"\u25B6",u"\u23E9"]
+        current = 0
+        msg = await ctx.send(embed=embedList[current])
+        
+        #adds the buttons as a reaction in the message
+        for button in buttons: 
+            await msg.add_reaction(button)
+        
+        #while loop that will be broken out of at time out
+        while True:
+            try: 
+                #checks that the reaction that was added was on of the buttons
+                #and that the reaction was done by the author of the command
+                #then sets the time out to 60 sec
+                reaction, user = await bot.wait_for("reaction_add", check=lambda reaction, user: user == ctx.author and reaction.emoji in buttons, timeout = 60.0)
+            #sends the timeout error and removes the reactions.
+            except asyncio.TimeoutError:
+                embed = embedList[current]
+                embed.set_footer(text = "Timed Out.")
+                await msg.clear_reactions()
+
+            else:
+                previous_page = current
+                
+                #checks which of the buttons was pressed and reacts accordingly
+                if reaction.emoji == u"\u23EA":
+                    current = 0
+                elif reaction.emoji == u"\u25C0":
+                    if current > 0:
+                        current -= 1
+                elif reaction.emoji == u"\u25B6":
+                    if current < len(embedList)-1:
+                        current +=1
+                elif reaction.emoji == u"\u23E9":
+                    current = len(embedList)-1
+            
+            #removes the reaction after the tesk was completed
+            for button in buttons: 
+                await msg.remove_reaction(button, ctx.author)
+            
+            #edits the message with the new embed
+            if current != previous_page:
+                await msg.edit(embed = embedList[current])
+
     elif(db.record('SELECT ChaName FROM characterLists WHERE UserID = ? AND ChaName =?', userID, charaName) is None):
         await ctx.send("You don't have a character by that name")
     else:
         chara = character.process(userID, charaName)
-        embed = discord.Embed(title= f'{chara.name}', description="You have a character")
-        fields = [("Str", f'{chara.str}', True),
-                ("Dex", f'{chara.dex}', True),
-                ("Con", f'{chara.con}', True),
-                ("Int", f'{chara.intel}', True),
-                ("Wis", f'{chara.wis}', True),
-                ("Cha", f'{chara.cha}', True)]
-        for name, value, inline in fields: 
-            embed.add_field(name = name, value = value, inline=inline)
-        await ctx.send(embed=embed)
+        await ctx.send(embed=chara.createEmbed())
 
-@bot.command(name = 'newcha')
+@bot.command(brief = 'paremeters: [character name]', description = 'Creates a new character by the given name with default stats',name = 'newchar')
 async def newcha(ctx, chaName: str):
     userID = ctx.author.id
     #checks to see if there is already a character created for the individual
     #if there isn't, creates the character, if there is it warns them they 
     #already have one
     if(chaName is None):
-        await ctx.send('Command: !newcha [characterName]')
+        await ctx.send('Command: !newchar [characterName]')
     elif(db.record('SELECT chaName FROM characterLists WHERE UserID = ? AND chaName = ?', userID, chaName) is not None):
         await ctx.send('You already have a character by that name.')
     else:

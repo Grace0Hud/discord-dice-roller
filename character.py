@@ -1,9 +1,11 @@
 from lib.db import db
+import discord
+from discord import embeds
 
 class character:
     #constructor
     #demands a name argument, but the others are defaulted to 0
-    def __init__(self, userID, name, str=0, dex=0, con=0, intel=0, wis=0, cha=0):
+    def __init__(self, userID:int, name:str, str=0, dex=0, con=0, intel=0, wis=0, cha=0):
         self.name = name
         self.str = str
         self.dex = dex
@@ -16,7 +18,25 @@ class character:
         characterInfo = db.record('SELECT * FROM characterLists WHERE UserID = ? AND ChaName = ?', userID, charaName)
         chara = character(characterInfo[0],characterInfo[1],characterInfo[2], characterInfo[3],characterInfo[4],characterInfo[5],characterInfo[6],characterInfo[7])
         return chara
-
+    
+    #processes a list of strings of names
+    #and returns corresponding character objects
+    def processMultiple(userID: int, nameList:list):
+        charaList = ['' for i in nameList]
+        for i in range(0, len(nameList)):
+            charaList[i] = character.process(userID, nameList[i][0])
+        return charaList
+    def createEmbed(self):
+        embed = discord.Embed(title= f'{self.name}', description="You have a character")
+        fields = [("Str", f'{self.str}', True),
+                ("Dex", f'{self.dex}', True),
+                ("Con", f'{self.con}', True),
+                ("Int", f'{self.intel}', True),
+                ("Wis", f'{self.wis}', True),
+                ("Cha", f'{self.cha}', True)]
+        for name, value, inline in fields: 
+            embed.add_field(name = name, value = value, inline=inline)
+        return embed
     #all setters for the class variables, 
     #will update in the database as well. 
     def setName(self, userID: int, newName: str):
