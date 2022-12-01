@@ -6,6 +6,7 @@ class character:
     #constructor
     #demands a name argument, but the others are defaulted to 0
     def __init__(self, userID:int, name:str, str=0, dex=0, con=0, intel=0, wis=0, cha=0):
+        self.userID = userID
         self.name = name
         self.str = str
         self.dex = dex
@@ -26,6 +27,15 @@ class character:
         for i in range(0, len(nameList)):
             charaList[i] = character.process(userID, nameList[i][0])
         return charaList
+    
+    def addToDB(self):
+        # info = [userID, self.name, self.str, self.dex, self.con, self.intel, self.wis, self.cha]
+        # valueset = [(i,) for i in info]
+        # print(valueset[0])
+        # valueset[0],valueset[1],valueset[2],valueset[3],valueset[4],valueset[5],valueset[6],valueset[7]
+        db.execute('INSERT INTO characterLists (UserID, ChaName, st, dex, con, intel, wis, cha) VALUES (?,?,?,?,?,?,?,?)', self.userID, self.name, self.str, self.dex, self.con, self.intel, self.wis, self.cha)
+    
+    #creates a formatted embed for the character
     def createEmbed(self):
         embed = discord.Embed(title= f'{self.name}', description="You have a character")
         fields = [("Str", f'{self.str}', True),
@@ -61,6 +71,31 @@ class character:
         self.cha = newCha
         db.execute('UPDATE characterLists SET cha = ? WHERE UserID = ?', newCha, userID)
 
+
+    #calls compute mod on specified stat
+    def getModifier(self, stat: str):
+        if stat == "st":
+            return character.computeMod(self.str)
+        elif stat == "dex":
+            return character.computeMod(self.dex)
+        elif stat == "con":
+            return character.computeMod(self.con)
+        elif stat == "intel":
+            return character.computeMod(self.intel)
+        elif stat == "wis":
+            return character.computeMod(self.wis)
+        elif stat == "cha":
+            return character.computeMod(self.cha)
+        else:
+            print("Not a valid stat")
+            return None
+
+    #computes modifier for stats
+    def computeMod(stat:int):
+        if stat >= 10:
+            return (stat-10)/2
+        else:
+            return (stat-11)/2
     #the to string function, 
     #returns the object in a formatted string
     def __str__(self):

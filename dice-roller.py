@@ -1,17 +1,18 @@
 # bot.py
 import os
 import random
-
 import discord
 import random
 import dotenv
+import asyncio
+
 from dotenv import load_dotenv
 from discord.ext import commands
 from discord import embeds
 from character import character
 from lib.db import db
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-import asyncio
+
 #getting enviormental variables
 #token stored this way for security
 load_dotenv()
@@ -39,16 +40,6 @@ async def on_ready():
     scheduler.start()
     print(f'{bot.user} is ready!')
 
-# @bot.command(name = 'help')
-# async def help(ctx):
-#     embed = discord.Embed(title= 'Commands', description="")
-#     fields = [("Str", '!roll [sides] [times]  || returns the sum of a [sides] sided die rolled [times] times', True),
-#              ("Dex", '!showchar [name] || returns the name and stats of the character of the specified name', True),
-#              ("Con", '!newchar [name] || creates a character by that name', True),]
-#     for name, value, inline in fields: 
-#         embed.add_field(name = name, value = value, inline=inline)
-#     await ctx.send(embed=embed)
-
 #commands
 @bot.command(brief = 'paremeters: [sides: a whole number] [#rolls: a whole number]', description = 'Gets a random number between 1 and \'sides\' \'rolls\' times then adds them up and returns them', name='roll')
 async def roll(ctx, sides: int, times: int):
@@ -62,8 +53,7 @@ async def roll(ctx, sides: int, times: int):
 async def showchar(ctx, charaName = ' '):
     #will print out the character information as an embed 
     userID = ctx.author.id
-    
-        
+
     if(db.record('SELECT ChaName FROM characterLists WHERE UserID = ?', userID) is None):
         await ctx.send("You do not have any characters to show.\n To create one, type \'!newcha [character name]\'")
     elif(charaName == ' '):
@@ -122,8 +112,8 @@ async def showchar(ctx, charaName = ' '):
         chara = character.process(userID, charaName)
         await ctx.send(embed=chara.createEmbed())
 
-@bot.command(brief = 'paremeters: [character name]', description = 'Creates a new character by the given name with default stats',name = 'newchar')
-async def newcha(ctx, chaName: str):
+@bot.command(brief = 'paremeters: [character name]; optional params: [str] [dex] [con] [int] [wis] [cha]', description = 'Creates a new character by the given name with default stats',name = 'newchar')
+async def newcha(ctx, chaName: str, st = 0, dex = 0, con = 0, intel = 0, wis = 0, cha = 0):
     userID = ctx.author.id
     #checks to see if there is already a character created for the individual
     #if there isn't, creates the character, if there is it warns them they 
@@ -133,7 +123,8 @@ async def newcha(ctx, chaName: str):
     elif(db.record('SELECT chaName FROM characterLists WHERE UserID = ? AND chaName = ?', userID, chaName) is not None):
         await ctx.send('You already have a character by that name.')
     else:
-        db.execute('INSERT INTO characterLists (UserID, ChaName) VALUES (?,?)', userID, chaName)
+        chara = character(userID, chaName, st, dex, con, intel, wis, cha)
+        chara.addToDB()
         await ctx.send('Character created')
 
 
