@@ -22,7 +22,7 @@ scheduler = AsyncIOScheduler()
 db.autosave(scheduler)
 #intenets are new, added in 09/01/22, it was the reason my bot could not
 #send messages for a long time
-intents = discord.Intents.default()
+intents = discord.Intents.all()
 intents.members = True 
 intents.messages = True
 
@@ -153,6 +153,14 @@ async def updatestat(ctx, charaName:str, stat:str, newValue:int):
             await ctx.send('Invalid stat.')
         else:
             await ctx.send('Stat updated.')
+@bot.command(name = 'deletechar', brief = 'param: [character name]', description = 'deletes your character by the specified name')
+async def deletechar(ctx, charName:str):
+    userID = ctx.author.id
+    if(db.characterInDB(userID, charName) is False):
+        await ctx.send("You don't have a character by that name")
+    else: 
+        db.execute('DELETE FROM characterlists WHERE UserID =? AND ChaName =?', userID, charName)
+        await ctx.send('Character deleted')
 
 bot.run(TOKEN)
 
