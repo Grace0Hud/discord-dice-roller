@@ -4,7 +4,7 @@ from discord import embeds
 
 class character:
     #constructor
-    #demands a name argument, but the others are defaulted to 0
+    #demands name and userID arguments, but the others are defaulted to 0 (or in the case of level, 1)
     def __init__(self, userID:int, name:str, level = 1, str=0, dex=0, con=0, intel=0, wis=0, cha=0):
         self.userID = userID
         self.name = name
@@ -41,11 +41,9 @@ class character:
                     return 4
                 return 3
             return 2
+    
+    #adds the character object to the database
     def addToDB(self):
-        # info = [userID, self.name, self.str, self.dex, self.con, self.intel, self.wis, self.cha]
-        # valueset = [(i,) for i in info]
-        # print(valueset[0])
-        # valueset[0],valueset[1],valueset[2],valueset[3],valueset[4],valueset[5],valueset[6],valueset[7]
         db.execute('INSERT INTO characterLists (UserID, ChaName, level, st, dex, con, intel, wis, cha) VALUES (?,?,?,?,?,?,?,?,?)', self.userID, self.name, self.level, self.str, self.dex, self.con, self.intel, self.wis, self.cha)
     
     #creates a formatted embed for the character
@@ -57,9 +55,13 @@ class character:
                 ("Int", f'{self.intel}' + '(' + f'{character.computeMod(self.intel)}' + ')', True),
                 ("Wis", f'{self.wis}'+ '(' + f'{character.computeMod(self.wis)}' + ')', True),
                 ("Cha", f'{self.cha}'+ '(' + f'{character.computeMod(self.cha)}' + ')', True)]
+        #adds every value in fields to the embed as an individual field
+        #in the order of a name, (such as Str), a value (such as f'{self.str}' + '(' + f'{character.computeMod(self.str)}')
+        #and whether it will be displayed as inline or not (true for all of them)
         for name, value, inline in fields: 
             embed.add_field(name = name, value = value, inline=inline)
         return embed
+
     #deciding which setter to use, returns false if an invalid value was passed in
     #otherwise updates the stat for the character and the database
     def setStat(self, stat: str, newValue:int):
@@ -81,6 +83,7 @@ class character:
             print("Not a valid stat")
             return False
         return True
+
     #all setters for the class variables, 
     #will update in the database as well. 
     def setLevel(self, newLevel: int):
@@ -127,6 +130,9 @@ class character:
         elif stat == "cha":
             return character.computeMod(self.cha)
         elif stat == ' ':
+            #this is here for the rol function, 
+            #since if it contains the default value
+            #there is no need to send an error message
             return None
         else:
             print("Not a valid stat")
@@ -138,6 +144,7 @@ class character:
             return int((stat-10)/2)
         else:
             return int((stat-11)/2)
+    
     #the to string function, 
     #returns the object in a formatted string
     def __str__(self):

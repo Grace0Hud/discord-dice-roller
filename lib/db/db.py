@@ -1,6 +1,11 @@
 from os.path import isfile
 from sqlite3 import connect
 from apscheduler.triggers.cron import CronTrigger
+
+#the path to the database file and build file
+#the database file, like the .env file, will not
+#be included in the project turn in as it contains userIDs 
+#which also classifies more private and identifying information
 DB_PATH = "./data/db/database.db"
 BUILD_PATH = "./data/db/build.sql"
 
@@ -37,6 +42,7 @@ def commit():
 def autosave(sched):
     sched.add_job(commit, CronTrigger(second=0))
 
+#closes the database file
 def close():
     cxn.close()
 
@@ -48,14 +54,19 @@ def field(command, *values):
     if(fetch) is not None:
         return fetch[0]
 
+#returns a record based on the command queried
+#returns a row
 def record(command, *values):
     cur.execute(command, tuple(values))
     return cur.fetchone()
+
 #executes a command and fetches all the data to verify it was added
 def records(command, *values):
     cur.execute(command, tuple(values))
     return cur.fetchall()
 
+#returns a record based on the command queried
+#returns a column
 def column(command, *values):
     cur.execute(command, tuple(values))
     return [item[0] for item in cur.fetchall()]

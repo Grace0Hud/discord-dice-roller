@@ -1,4 +1,4 @@
-# bot.py
+# import statements
 import os
 import random
 import discord
@@ -15,20 +15,29 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 #getting enviormental variables
 #token stored this way for security
+#the .env file is not included in the folder turned in for this project
+#its a unique token that should be kept secure
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 description = '''A dice rolling and character keeping bot for Dungeons and Dragons'''
+
+#scheduler will autosave every minute to make sure no data is lost.
 scheduler = AsyncIOScheduler()
 db.autosave(scheduler)
+
 #intenets are new, added in 09/01/22, it was the reason my bot could not
 #send messages for a long time
 intents = discord.Intents.all()
 intents.members = True 
 intents.messages = True
 
+#creates a bot with command prefix and description
+#as well as gives it the permissions from the intents
 bot = commands.Bot(command_prefix='!', description=description, intents=intents)
 
 #events 
+#prints to the console, for my use to know
+#when the bot is ready to accept commands
 @bot.event
 async def on_connect():
     print(f'{bot.user} has connected to Discord!')
@@ -41,6 +50,11 @@ async def on_ready():
     print(f'{bot.user} is ready!')
 
 #commands
+#the brief and description are provided for discord.py's
+#built in 'help' command
+
+#will roll a die
+#and add modifiers when applicable
 @bot.command(brief = 'paremeters: [sides: a whole number] [#rolls: a whole number] optional params: [name] [stat] [proficiency (choose): 0, 1, 2]', description = 'Gets a random number between 1 and \'sides\' \'rolls\' times then adds them up and returns them. If the stat and proficiency parameters are present, it will add the modifier from the specified stat and your profiency based on your level (2 being expertise aka double proficiency)', name='roll')
 async def roll(ctx, sides: int, times: int, charaName = ' ', stat = ' ', prof = 0):
     #ctx refers to the context for the channel where the command was sent from
@@ -61,6 +75,8 @@ async def roll(ctx, sides: int, times: int, charaName = ' ', stat = ' ', prof = 
 
     await ctx.send(sum)
 
+#will show all the characters associated with a certain userID
+#or only the specified chracter
 @bot.command(brief = 'paremeters: NONE or [character name]', description = 'Will return all of the characters associated with the caller\'s UserID or a specific character when [character name] is specified', name = 'showchar')
 async def showchar(ctx, charaName = ' '):
     #will print out the character information as an embed 
@@ -74,6 +90,7 @@ async def showchar(ctx, charaName = ' '):
         #creating an embed for each of the characters and storing it in a list
         embedList = [charaList[i].createEmbed() for i in range(0, len(charaList))]
         #list of the emoji reactions to be added to the message
+        #in order: fast forward, backward, forward, fast backward
         buttons = [u"\u23EA", u"\u25C0", u"\u25B6",u"\u23E9"]
         current = 0
         msg = await ctx.send(embed=embedList[current])
@@ -100,27 +117,32 @@ async def showchar(ctx, charaName = ' '):
                 
                 #checks which of the buttons was pressed and reacts accordingly
                 if reaction.emoji == u"\u23EA":
+                    #takes to beginning of list
                     current = 0
                 elif reaction.emoji == u"\u25C0":
+                    #goes one page backward if that is possible
                     if current > 0:
                         current -= 1
                 elif reaction.emoji == u"\u25B6":
+                    #goes one page forward if possible
                     if current < len(embedList)-1:
                         current +=1
                 elif reaction.emoji == u"\u23E9":
+                    #goes to the end of the list
                     current = len(embedList)-1
             
-            #removes the reaction after the tesk was completed
+            #removes the reaction after the task was completed
             for button in buttons: 
                 await msg.remove_reaction(button, ctx.author)
             
-            #edits the message with the new embed
+            #edits the message with the new embed if it needs changing
             if current != previous_page:
                 await msg.edit(embed = embedList[current])
 
-    elif(db.record('SELECT ChaName FROM characterLists WHERE UserID = ? AND ChaName =?', userID, charaName) is None):
+    elif(db.characterInDB(userID, charaName) is False):
         await ctx.send("You don't have a character by that name")
     else:
+        #just sends one character if a character that belongs to the user was specified
         chara = character.process(userID, charaName)
         await ctx.send(embed=chara.createEmbed())
 
@@ -139,6 +161,7 @@ async def newchar(ctx, chaName: str, level = 1, st = 0, dex = 0, con = 0, intel 
         chara.addToDB()
         await ctx.send('Character created')
 
+#updates the specified stat to a new value
 @bot.command(name = 'updatestat', brief = 'parameters: [character name] [stat (choose from): level, str, dex, con, int, wis, or cha] [new value]', description = 'changes the the specified stat to the new value for the specified character')
 async def updatestat(ctx, charaName:str, stat:str, newValue:int):
 
@@ -153,6 +176,8 @@ async def updatestat(ctx, charaName:str, stat:str, newValue:int):
             await ctx.send('Invalid stat.')
         else:
             await ctx.send('Stat updated.')
+
+#deletes a specific character owned by the user from the database
 @bot.command(name = 'deletechar', brief = 'param: [character name]', description = 'deletes your character by the specified name')
 async def deletechar(ctx, charName:str):
     userID = ctx.author.id
@@ -162,5 +187,5 @@ async def deletechar(ctx, charName:str):
         db.execute('DELETE FROM characterlists WHERE UserID =? AND ChaName =?', userID, charName)
         await ctx.send('Character deleted')
 
+#runs the bot with the token taken from the .env file
 bot.run(TOKEN)
-
